@@ -1,0 +1,2 @@
+package com.jobtracker.model;
+public final class Enums { private Enums(){} public enum Status{SAVED,APPLIED,SCREENING,INTERVIEW,OFFER,ACCEPTED,REJECTED,WITHDRAWN} public enum InterviewType{PHONE,VIDEO,ONSITE,TECHNICAL,HR,OTHER} }

@@ -1,0 +1,3 @@
+package com.jobtracker.repository;
+import com.jobtracker.model.*; import com.jobtracker.model.Enums.Status; import org.springframework.data.jpa.repository.*; import java.util.*;
+public interface JobApplicationRepository extends JpaRepository<JobApplication,UUID>{List<JobApplication> findByUserIdOrderByUpdatedAtDesc(UUID id); List<JobApplication> findByUserIdAndStatusOrderByUpdatedAtDesc(UUID id,Status s); Optional<JobApplication> findByIdAndUserId(UUID id,UUID userId); long countByUserIdAndStatus(UUID id,Status s);}
