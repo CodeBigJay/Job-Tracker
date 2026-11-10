@@ -33,5 +33,6 @@ public class Interview {
     @Column(length = 3000)
     String notes;
 
+    @Builder.Default
     Boolean completed = false;
 }
