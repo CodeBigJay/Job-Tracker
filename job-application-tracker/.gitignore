@@ -1,10 +1,10 @@
-# Environment files and local secrets
+# Local environment files and secrets
 .env
-.env.*
-!.env.example
 **/.env
-**/.env.*
-**/!.env.example
+.env.local
+**/.env.local
+.env.production
+**/.env.production
 
 # Java / Maven
 **/target/
