@@ -25,7 +25,7 @@ A full-stack job application tracker built to help users organise opportunities,
 - Store job links, location, salary range, application dates, closing dates and descriptions
 - Responsive layout for desktop and mobile
 
-The backend also contains API endpoints and data models for interviews, notes and reminders. Their full management interface is still planned work and should not be considered complete yet.
+Each application has a details panel for adding and reviewing notes, scheduling interviews, and setting reminders. Interviews and reminders can be marked complete or deleted; notes can be deleted.
 
 ## Run with Docker Compose
 
