@@ -2,8 +2,9 @@ import React, { FormEvent, useCallback, useEffect, useMemo, useState } from 'rea
 import { createRoot } from 'react-dom/client';
 import {
   Briefcase, Plus, LogOut, RefreshCw, Search, Pencil, Trash2,
-  ExternalLink, LayoutDashboard, X, CalendarDays
+  ExternalLink, LayoutDashboard, X, CalendarDays, ClipboardList
 } from 'lucide-react';
+import ApplicationDetails from './ApplicationDetails';
 import './style.css';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
@@ -85,6 +86,7 @@ function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
 
   const request = useCallback(async <T,>(path: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
@@ -327,6 +329,7 @@ function App() {
                     </div>
                   </div>
                   <div className="item-actions">
+                    <button className="icon-button" aria-label={`View details for ${application.jobTitle}`} onClick={() => setSelectedApplication(application)}><ClipboardList size={16} /></button>
                     <button className="icon-button" aria-label={`Edit ${application.jobTitle}`} onClick={() => startEditing(application)}><Pencil size={16} /></button>
                     <button className="icon-button danger-icon" aria-label={`Delete ${application.jobTitle}`} onClick={() => void deleteApplication(application.id)}><Trash2 size={16} /></button>
                   </div>
@@ -337,6 +340,7 @@ function App() {
         </section>
       </section>
 
+      {selectedApplication && <ApplicationDetails application={selectedApplication} request={request} onClose={() => setSelectedApplication(null)} onMessage={setMessage} />}
       {message && <div className="toast" role="status"><span>{message}</span><button onClick={() => setMessage('')} aria-label="Dismiss message"><X size={15} /></button></div>}
     </main>
   );
