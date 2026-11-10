@@ -121,9 +121,12 @@ The frontend development server runs at [http://localhost:5173](http://localhost
 | DELETE | `/api/applications/{id}` | Delete an application |
 | GET | `/api/applications/dashboard/counts` | Get status counts |
 | GET / POST | `/api/applications/{id}/interviews` | List or add interviews |
+| PATCH / DELETE | `/api/applications/{id}/interviews/{interviewId}` | Update completion or delete an interview |
 | GET / POST | `/api/applications/{id}/notes` | List or add notes |
-| GET | `/api/applications/reminders` | List reminders |
-| POST | `/api/applications/{id}/reminders` | Add a reminder |
+| DELETE | `/api/applications/{id}/notes/{noteId}` | Delete a note |
+| GET / POST | `/api/applications/{id}/reminders` | List or add reminders |
+| PATCH / DELETE | `/api/applications/{id}/reminders/{reminderId}` | Update completion or delete a reminder |
+| GET | `/api/applications/reminders` | List all reminders for the signed-in user |
 
 Protected routes require an `Authorization: Bearer <token>` header.
 
