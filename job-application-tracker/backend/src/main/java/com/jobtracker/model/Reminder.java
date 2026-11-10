@@ -23,5 +23,7 @@ public class Reminder {
 
     String title;
     LocalDateTime remindAt;
+
+    @Builder.Default
     Boolean completed = false;
 }
