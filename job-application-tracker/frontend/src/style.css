@@ -115,3 +115,9 @@ textarea{resize:vertical;min-height:76px}
 .empty-inline{font-size:11px;color:#98a2b3;margin:5px 0}
 @media(max-width:900px){.detail-columns{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.modal-backdrop{padding:8px}.detail-modal{padding:15px;max-height:95vh}.detail-columns{grid-template-columns:1fr}.detail-header h2{font-size:19px}}
+
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:15px;border-top:1px solid #edf0f4;color:#8792a2;font-size:11px}
+.pagination>div{display:flex;align-items:center;gap:9px}
+.pagination .secondary-button{font-size:10px;padding:7px 10px}
+.pagination .secondary-button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:480px){.pagination{align-items:flex-start;flex-direction:column}.pagination>div{width:100%;justify-content:space-between}}
