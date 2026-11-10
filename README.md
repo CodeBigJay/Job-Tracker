@@ -18,7 +18,7 @@ The application source code is in [`job-application-tracker/`](./job-application
 - JWT-protected application endpoints
 - Create, view, edit and delete job applications
 - Track application status
-- Search and filter applications
+- Search, filter and paginate applications
 - Dashboard counts by status
 - Responsive interface
 
