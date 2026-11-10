@@ -61,20 +61,13 @@ const emptyForm: ApplicationForm = {
 async function readResponse<T>(response: Response): Promise<T> {
   const raw = await response.text();
   let data: any = null;
-
   if (raw) {
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      data = null;
-    }
+    try { data = JSON.parse(raw); } catch { data = null; }
   }
-
   if (!response.ok) {
     const message = data?.error || data?.detail || data?.message;
     throw new Error(message || `Request failed (${response.status})`);
   }
-
   return data as T;
 }
 
@@ -97,7 +90,6 @@ function App() {
     const headers = new Headers(options.headers);
     if (options.body) headers.set('Content-Type', 'application/json');
     if (token) headers.set('Authorization', `Bearer ${token}`);
-
     const response = await fetch(`${API}${path}`, { ...options, headers });
     return readResponse<T>(response);
   }, [token]);
@@ -118,12 +110,8 @@ function App() {
   }, [request, statusFilter, token]);
 
   useEffect(() => {
-    if (token) {
-      void refreshData();
-    } else {
-      setApplications([]);
-      setCounts({});
-    }
+    if (token) void refreshData();
+    else { setApplications([]); setCounts({}); }
   }, [token, refreshData]);
 
   const visibleApplications = useMemo(() => {
@@ -140,17 +128,15 @@ function App() {
     setBusy(true);
     setMessage('');
     try {
-      const payload = isLogin
-        ? { email, password }
-        : { fullName, email, password };
-
+      const payload = isLogin ? { email, password } : { fullName, email, password };
       const response = await fetch(`${API}/auth/${isLogin ? 'login' : 'register'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await readResponse<{ token: string }>(response);
+      const data = await readResponse<{ token: string; email?: string }>(response);
       localStorage.setItem('jobtrack-token', data.token);
+      setEmail(data.email || email);
       setToken(data.token);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Authentication failed.');
@@ -177,7 +163,6 @@ function App() {
       source: form.source || null,
       description: form.description || null
     };
-
     try {
       await request(
         editingId ? `/applications/${editingId}` : '/applications',
@@ -239,23 +224,10 @@ function App() {
           <p className="eyebrow">YOUR CAREER, ORGANISED</p>
           <h1>{isLogin ? 'Welcome back' : 'Create your account'}</h1>
           <p className="muted">Keep every application and opportunity in one place.</p>
-          {!isLogin && (
-            <label>
-              Full name
-              <input value={fullName} onChange={event => setFullName(event.target.value)} required />
-            </label>
-          )}
-          <label>
-            Email address
-            <input type="email" value={email} onChange={event => setEmail(event.target.value)} required />
-          </label>
-          <label>
-            Password
-            <input type="password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} required />
-          </label>
-          <button className="primary-button full-width" disabled={busy}>
-            {busy ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}
-          </button>
+          {!isLogin && <label>Full name<input value={fullName} onChange={event => setFullName(event.target.value)} required /></label>}
+          <label>Email address<input type="email" value={email} onChange={event => setEmail(event.target.value)} required /></label>
+          <label>Password<input type="password" value={password} onChange={event => setPassword(event.target.value)} minLength={8} required /></label>
+          <button className="primary-button full-width" disabled={busy}>{busy ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}</button>
           <button type="button" className="text-button" onClick={() => { setIsLogin(!isLogin); setMessage(''); }}>
             {isLogin ? 'New here? Create an account' : 'Already registered? Sign in'}
           </button>
@@ -273,8 +245,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <a className="brand" href="#" aria-label="JobTrack home">
-          <span className="brand-mark small"><Briefcase size={19} /></span>
-          <span>JobTrack</span>
+          <span className="brand-mark small"><Briefcase size={19} /></span><span>JobTrack</span>
         </a>
         <div className="topbar-actions">
           <span className="account-label">{email || 'Your workspace'}</span>
@@ -289,12 +260,9 @@ function App() {
           <p className="muted">Keep track of where every opportunity stands.</p>
         </div>
         <button className="primary-button" onClick={() => {
-          setEditingId(null);
-          setForm(emptyForm);
+          setEditingId(null); setForm(emptyForm);
           document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' });
-        }}>
-          <Plus size={17} /> Add application
-        </button>
+        }}><Plus size={17} /> Add application</button>
       </section>
 
       <section className="stats-grid" aria-label="Application summary">
@@ -307,10 +275,7 @@ function App() {
       <section className="content-grid">
         <form id="application-form" className="surface application-form" onSubmit={saveApplication}>
           <div className="section-heading">
-            <div>
-              <p className="eyebrow">{editingId ? 'UPDATE DETAILS' : 'NEW OPPORTUNITY'}</p>
-              <h2>{editingId ? 'Edit application' : 'Add an application'}</h2>
-            </div>
+            <div><p className="eyebrow">{editingId ? 'UPDATE DETAILS' : 'NEW OPPORTUNITY'}</p><h2>{editingId ? 'Edit application' : 'Add an application'}</h2></div>
             {editingId && <button type="button" className="icon-button" aria-label="Cancel editing" onClick={() => { setEditingId(null); setForm(emptyForm); }}><X size={18} /></button>}
           </div>
           <label>Company<input value={form.company} onChange={e => updateForm('company', e.target.value)} required maxLength={150} /></label>
@@ -329,9 +294,7 @@ function App() {
             <label>Source<input placeholder="Company site, LinkedIn…" value={form.source} onChange={e => updateForm('source', e.target.value)} /></label>
           </div>
           <label>Notes<textarea rows={3} value={form.description} onChange={e => updateForm('description', e.target.value)} /></label>
-          <button className="primary-button full-width" disabled={busy}>
-            {busy ? 'Saving…' : editingId ? 'Save changes' : 'Save application'}
-          </button>
+          <button className="primary-button full-width" disabled={busy}>{busy ? 'Saving…' : editingId ? 'Save changes' : 'Save application'}</button>
         </form>
 
         <section className="surface applications-panel">
@@ -346,13 +309,8 @@ function App() {
               {statuses.map(value => <option key={value} value={value}>{value.replace('_', ' ')}</option>)}
             </select>
           </div>
-
           {visibleApplications.length === 0 ? (
-            <div className="empty-state">
-              <CalendarDays size={28} />
-              <h3>{search || statusFilter ? 'No matching applications' : 'Your list is empty'}</h3>
-              <p>{search || statusFilter ? 'Try another search or status filter.' : 'Add your first opportunity using the form.'}</p>
-            </div>
+            <div className="empty-state"><CalendarDays size={28} /><h3>{search || statusFilter ? 'No matching applications' : 'Your list is empty'}</h3><p>{search || statusFilter ? 'Try another search or status filter.' : 'Add your first opportunity using the form.'}</p></div>
           ) : (
             <div className="application-list">
               {visibleApplications.map(application => (
