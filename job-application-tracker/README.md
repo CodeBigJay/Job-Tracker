@@ -21,6 +21,7 @@ A full-stack job application tracker built to help users organise opportunities,
 - Track saved, applied, screening, interview, offer, accepted, rejected and withdrawn statuses
 - Search by company, role, location or source
 - Filter by application status
+- Paginate the application list as it grows
 - Dashboard totals and status counts
 - Store job links, location, salary range, application dates, closing dates and descriptions
 - Responsive layout for desktop and mobile
