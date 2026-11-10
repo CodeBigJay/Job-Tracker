@@ -82,6 +82,7 @@ function App() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState<ApplicationForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -124,6 +125,18 @@ function App() {
         .some(value => value?.toLowerCase().includes(term))
     );
   }, [applications, search]);
+
+  const pageSize = 6;
+  const totalPages = Math.max(1, Math.ceil(visibleApplications.length / pageSize));
+  const paginatedApplications = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return visibleApplications.slice(start, start + pageSize);
+  }, [currentPage, visibleApplications]);
+
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   async function authenticate(event: FormEvent) {
     event.preventDefault();
@@ -315,7 +328,7 @@ function App() {
             <div className="empty-state"><CalendarDays size={28} /><h3>{search || statusFilter ? 'No matching applications' : 'Your list is empty'}</h3><p>{search || statusFilter ? 'Try another search or status filter.' : 'Add your first opportunity using the form.'}</p></div>
           ) : (
             <div className="application-list">
-              {visibleApplications.map(application => (
+              {paginatedApplications.map(application => (
                 <article className="application-item" key={application.id}>
                   <div className="application-main">
                     <div className="application-title-row">
@@ -335,6 +348,16 @@ function App() {
                   </div>
                 </article>
               ))}
+            </div>
+          )}
+          {visibleApplications.length > 0 && (
+            <div className="pagination">
+              <span>Showing {Math.min((currentPage - 1) * pageSize + 1, visibleApplications.length)}–{Math.min(currentPage * pageSize, visibleApplications.length)} of {visibleApplications.length}</span>
+              <div>
+                <button className="secondary-button" disabled={currentPage === 1} onClick={() => setCurrentPage(page => Math.max(1, page - 1))}>Previous</button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <button className="secondary-button" disabled={currentPage === totalPages} onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}>Next</button>
+              </div>
             </div>
           )}
         </section>
