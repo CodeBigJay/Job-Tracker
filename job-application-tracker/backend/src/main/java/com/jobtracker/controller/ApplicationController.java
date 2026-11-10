@@ -1,22 +1,272 @@
 package com.jobtracker.controller;
-import com.jobtracker.model.*; import com.jobtracker.model.Enums.Status; import com.jobtracker.model.Enums.InterviewType; import com.jobtracker.repository.*; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import org.springframework.http.*; import java.time.*; import java.util.*;
-@RestController @RequestMapping("/api/applications") public class ApplicationController {
- record AppRequest(@NotBlank String company,@NotBlank String jobTitle,String location,String jobUrl,String salary,String source,Status status,LocalDate appliedDate,LocalDate closingDate,String description){}
- record InterviewRequest(@NotNull LocalDateTime scheduledAt,InterviewType type,String interviewer,String meetingUrl,String notes){}
- record NoteRequest(@NotBlank String content){} record ReminderRequest(@NotBlank String title,LocalDateTime remindAt){}
- final JobApplicationRepository apps; final UserRepository users; final InterviewRepository interviews; final NoteRepository notes; final ReminderRepository reminders;
- ApplicationController(JobApplicationRepository a,UserRepository u,InterviewRepository i,NoteRepository n,ReminderRepository r){apps=a;users=u;interviews=i;notes=n;reminders=r;}
- User user(String e){return users.findByEmail(e).orElseThrow();} JobApplication get(UUID id,String e){return apps.findByIdAndUserId(id,user(e).getId()).orElseThrow();}
- @GetMapping List<JobApplication> all(@RequestParam(required=false)Status status,java.security.Principal p){UUID u=user(p.getName()).getId();return status==null?apps.findByUserIdOrderByUpdatedAtDesc(u):apps.findByUserIdAndStatusOrderByUpdatedAtDesc(u,status);}
- @GetMapping("/{id}") JobApplication one(@PathVariable UUID id,java.security.Principal p){return get(id,p.getName());}
- @PostMapping JobApplication create(@Valid @RequestBody AppRequest r,java.security.Principal p){return apps.save(JobApplication.builder().user(user(p.getName())).company(r.company()).jobTitle(r.jobTitle()).location(r.location()).jobUrl(r.jobUrl()).salary(r.salary()).source(r.source()).status(r.status()).appliedDate(r.appliedDate()).closingDate(r.closingDate()).description(r.description()).build());}
- @PutMapping("/{id}") JobApplication update(@PathVariable UUID id,@Valid @RequestBody AppRequest r,java.security.Principal p){JobApplication a=get(id,p.getName());a.setCompany(r.company());a.setJobTitle(r.jobTitle());a.setLocation(r.location());a.setJobUrl(r.jobUrl());a.setSalary(r.salary());a.setSource(r.source());a.setStatus(r.status());a.setAppliedDate(r.appliedDate());a.setClosingDate(r.closingDate());a.setDescription(r.description());return apps.save(a);}
- @DeleteMapping("/{id}") ResponseEntity<Void> delete(@PathVariable UUID id,java.security.Principal p){apps.delete(get(id,p.getName()));return ResponseEntity.noContent().build();}
- @GetMapping("/dashboard/counts") Map<String,Long> counts(java.security.Principal p){Map<String,Long> m=new LinkedHashMap<>();for(Status s:Status.values())m.put(s.name(),apps.countByUserIdAndStatus(user(p.getName()).getId(),s));return m;}
- @PostMapping("/{id}/interviews") Interview interview(@PathVariable UUID id,@Valid @RequestBody InterviewRequest r,java.security.Principal p){return interviews.save(Interview.builder().application(get(id,p.getName())).scheduledAt(r.scheduledAt()).type(r.type()).interviewer(r.interviewer()).meetingUrl(r.meetingUrl()).notes(r.notes()).build());}
- @GetMapping("/{id}/interviews") List<Interview> interviews(@PathVariable UUID id,java.security.Principal p){return interviews.findByApplicationIdOrderByScheduledAtAsc(get(id,p.getName()).getId());}
- @PostMapping("/{id}/notes") Note note(@PathVariable UUID id,@Valid @RequestBody NoteRequest r,java.security.Principal p){return notes.save(Note.builder().application(get(id,p.getName())).content(r.content()).build());}
- @GetMapping("/{id}/notes") List<Note> notes(@PathVariable UUID id,java.security.Principal p){return notes.findByApplicationIdOrderByCreatedAtDesc(get(id,p.getName()).getId());}
- @PostMapping("/{id}/reminders") Reminder reminder(@PathVariable UUID id,@Valid @RequestBody ReminderRequest r,java.security.Principal p){return reminders.save(Reminder.builder().application(get(id,p.getName())).title(r.title()).remindAt(r.remindAt()).build());}
- @GetMapping("/reminders") List<Reminder> reminders(java.security.Principal p){return reminders.findByApplicationUserIdOrderByRemindAtAsc(user(p.getName()).getId());}
+
+import com.jobtracker.model.*;
+import com.jobtracker.model.Enums.InterviewType;
+import com.jobtracker.model.Enums.Status;
+import com.jobtracker.repository.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/applications")
+public class ApplicationController {
+    record AppRequest(
+            @NotBlank String company,
+            @NotBlank String jobTitle,
+            String location,
+            String jobUrl,
+            String salary,
+            String source,
+            Status status,
+            LocalDate appliedDate,
+            LocalDate closingDate,
+            String description
+    ) {}
+
+    record InterviewRequest(
+            @NotNull LocalDateTime scheduledAt,
+            InterviewType type,
+            String interviewer,
+            String meetingUrl,
+            String notes
+    ) {}
+
+    record InterviewUpdate(Boolean completed) {}
+    record NoteRequest(@NotBlank String content) {}
+    record ReminderRequest(@NotBlank String title, @NotNull LocalDateTime remindAt) {}
+    record ReminderUpdate(Boolean completed) {}
+
+    private final JobApplicationRepository applications;
+    private final UserRepository users;
+    private final InterviewRepository interviews;
+    private final NoteRepository notes;
+    private final ReminderRepository reminders;
+
+    public ApplicationController(
+            JobApplicationRepository applications,
+            UserRepository users,
+            InterviewRepository interviews,
+            NoteRepository notes,
+            ReminderRepository reminders
+    ) {
+        this.applications = applications;
+        this.users = users;
+        this.interviews = interviews;
+        this.notes = notes;
+        this.reminders = reminders;
+    }
+
+    private User user(String email) {
+        return users.findByEmail(email).orElseThrow();
+    }
+
+    private JobApplication getApplication(UUID id, String email) {
+        return applications.findByIdAndUserId(id, user(email).getId()).orElseThrow();
+    }
+
+    @GetMapping
+    List<JobApplication> all(@RequestParam(required = false) Status status, Principal principal) {
+        UUID userId = user(principal.getName()).getId();
+        return status == null
+                ? applications.findByUserIdOrderByUpdatedAtDesc(userId)
+                : applications.findByUserIdAndStatusOrderByUpdatedAtDesc(userId, status);
+    }
+
+    @GetMapping("/{id}")
+    JobApplication one(@PathVariable UUID id, Principal principal) {
+        return getApplication(id, principal.getName());
+    }
+
+    @PostMapping
+    JobApplication create(@Valid @RequestBody AppRequest request, Principal principal) {
+        JobApplication application = JobApplication.builder()
+                .user(user(principal.getName()))
+                .company(request.company().trim())
+                .jobTitle(request.jobTitle().trim())
+                .location(request.location())
+                .jobUrl(request.jobUrl())
+                .salary(request.salary())
+                .source(request.source())
+                .status(request.status())
+                .appliedDate(request.appliedDate())
+                .closingDate(request.closingDate())
+                .description(request.description())
+                .build();
+        return applications.save(application);
+    }
+
+    @PutMapping("/{id}")
+    JobApplication update(
+            @PathVariable UUID id,
+            @Valid @RequestBody AppRequest request,
+            Principal principal
+    ) {
+        JobApplication application = getApplication(id, principal.getName());
+        application.setCompany(request.company().trim());
+        application.setJobTitle(request.jobTitle().trim());
+        application.setLocation(request.location());
+        application.setJobUrl(request.jobUrl());
+        application.setSalary(request.salary());
+        application.setSource(request.source());
+        application.setStatus(request.status());
+        application.setAppliedDate(request.appliedDate());
+        application.setClosingDate(request.closingDate());
+        application.setDescription(request.description());
+        return applications.save(application);
+    }
+
+    @DeleteMapping("/{id}")
+    ResponseEntity<Void> delete(@PathVariable UUID id, Principal principal) {
+        applications.delete(getApplication(id, principal.getName()));
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/dashboard/counts")
+    Map<String, Long> counts(Principal principal) {
+        UUID userId = user(principal.getName()).getId();
+        Map<String, Long> result = new LinkedHashMap<>();
+        for (Status status : Status.values()) {
+            result.put(status.name(), applications.countByUserIdAndStatus(userId, status));
+        }
+        return result;
+    }
+
+    @PostMapping("/{id}/interviews")
+    Interview addInterview(
+            @PathVariable UUID id,
+            @Valid @RequestBody InterviewRequest request,
+            Principal principal
+    ) {
+        return interviews.save(Interview.builder()
+                .application(getApplication(id, principal.getName()))
+                .scheduledAt(request.scheduledAt())
+                .type(request.type())
+                .interviewer(request.interviewer())
+                .meetingUrl(request.meetingUrl())
+                .notes(request.notes())
+                .completed(false)
+                .build());
+    }
+
+    @GetMapping("/{id}/interviews")
+    List<Interview> listInterviews(@PathVariable UUID id, Principal principal) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        return interviews.findByApplicationIdOrderByScheduledAtAsc(applicationId);
+    }
+
+    @PatchMapping("/{id}/interviews/{interviewId}")
+    Interview updateInterview(
+            @PathVariable UUID id,
+            @PathVariable UUID interviewId,
+            @RequestBody InterviewUpdate request,
+            Principal principal
+    ) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        Interview interview = interviews.findByIdAndApplicationId(interviewId, applicationId)
+                .orElseThrow();
+        if (request.completed() != null) interview.setCompleted(request.completed());
+        return interviews.save(interview);
+    }
+
+    @DeleteMapping("/{id}/interviews/{interviewId}")
+    ResponseEntity<Void> deleteInterview(
+            @PathVariable UUID id,
+            @PathVariable UUID interviewId,
+            Principal principal
+    ) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        Interview interview = interviews.findByIdAndApplicationId(interviewId, applicationId)
+                .orElseThrow();
+        interviews.delete(interview);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/notes")
+    Note addNote(
+            @PathVariable UUID id,
+            @Valid @RequestBody NoteRequest request,
+            Principal principal
+    ) {
+        return notes.save(Note.builder()
+                .application(getApplication(id, principal.getName()))
+                .content(request.content().trim())
+                .build());
+    }
+
+    @GetMapping("/{id}/notes")
+    List<Note> listNotes(@PathVariable UUID id, Principal principal) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        return notes.findByApplicationIdOrderByCreatedAtDesc(applicationId);
+    }
+
+    @DeleteMapping("/{id}/notes/{noteId}")
+    ResponseEntity<Void> deleteNote(
+            @PathVariable UUID id,
+            @PathVariable UUID noteId,
+            Principal principal
+    ) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        Note note = notes.findByIdAndApplicationId(noteId, applicationId).orElseThrow();
+        notes.delete(note);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reminders")
+    Reminder addReminder(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReminderRequest request,
+            Principal principal
+    ) {
+        return reminders.save(Reminder.builder()
+                .application(getApplication(id, principal.getName()))
+                .title(request.title().trim())
+                .remindAt(request.remindAt())
+                .completed(false)
+                .build());
+    }
+
+    @GetMapping("/{id}/reminders")
+    List<Reminder> listApplicationReminders(@PathVariable UUID id, Principal principal) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        return reminders.findByApplicationIdOrderByRemindAtAsc(applicationId);
+    }
+
+    @PatchMapping("/{id}/reminders/{reminderId}")
+    Reminder updateReminder(
+            @PathVariable UUID id,
+            @PathVariable UUID reminderId,
+            @RequestBody ReminderUpdate request,
+            Principal principal
+    ) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        Reminder reminder = reminders.findByIdAndApplicationId(reminderId, applicationId)
+                .orElseThrow();
+        if (request.completed() != null) reminder.setCompleted(request.completed());
+        return reminders.save(reminder);
+    }
+
+    @DeleteMapping("/{id}/reminders/{reminderId}")
+    ResponseEntity<Void> deleteReminder(
+            @PathVariable UUID id,
+            @PathVariable UUID reminderId,
+            Principal principal
+    ) {
+        UUID applicationId = getApplication(id, principal.getName()).getId();
+        Reminder reminder = reminders.findByIdAndApplicationId(reminderId, applicationId)
+                .orElseThrow();
+        reminders.delete(reminder);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/reminders")
+    List<Reminder> allReminders(Principal principal) {
+        return reminders.findByApplicationUserIdOrderByRemindAtAsc(user(principal.getName()).getId());
+    }
 }
