@@ -287,6 +287,43 @@ function App() {
         <div className="stat-card"><span>Offers</span><strong>{counts.OFFER || 0}</strong><small>Offers received</small></div>
       </section>
 
+      <section className="surface discovery-panel">
+        <div className="section-heading discovery-heading">
+          <div>
+            <p className="eyebrow"><Search size={14} /> JOB DISCOVERY · SOUTH AFRICA</p>
+            <h2>Explore opportunities across industries</h2>
+            <p className="muted">Browse current vacancies from Work.net.za. Each listing links to its original employer or recruitment source.</p>
+          </div>
+          <a className="secondary-button" href="https://work.net.za/jobs" target="_blank" rel="noreferrer">Browse all jobs <ExternalLink size={14} /></a>
+        </div>
+        <div className="discovery-grid">
+          {[
+            ['Administration','/jobs/administration'],['Agriculture','/jobs/agriculture'],
+            ['Education','/jobs/education'],['Engineering','/jobs/engineering'],
+            ['Finance & Accounting','/jobs/finance-and-accounting'],['Healthcare','/jobs/healthcare'],
+            ['Human Resources','/jobs/human-resources'],['IT & Technology','/jobs/technology'],
+            ['Legal & Compliance','/jobs/legal'],['Logistics & Supply Chain','/jobs/logistics-and-supply-chain'],
+            ['Marketing','/jobs/marketing'],['Hospitality & Food Service','/jobs/hospitality'],
+            ['Sales & Customer Service','/jobs/sales-and-collections'],['Research','/jobs/research'],
+            ['Skilled Trades & Drivers','/jobs/skilled-trades'],['Remote Opportunities','/jobs/remote'],
+            ['Entry-Level Jobs','/jobs/entry-level'],['Internships & Graduate Roles','/jobs/graduate-trainees']
+          ].map(([label, path]) => (
+            <a className="discovery-link" href={`https://work.net.za${path}`} target="_blank" rel="noreferrer" key={path}>
+              <span>{label}</span><ExternalLink size={13} />
+            </a>
+          ))}
+        </div>
+        <div className="discovery-footer">
+          <p><strong>Found a vacancy?</strong> Open the advert, check the requirements and closing date, then add it to your tracker as SAVED before applying.</p>
+          <button className="primary-button" onClick={() => {
+            setEditingId(null);
+            setForm({ ...emptyForm, status: 'SAVED', source: 'Work.net.za' });
+            document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' });
+          }}><Plus size={16} /> Save a vacancy</button>
+        </div>
+        <p className="discovery-note">Vacancies change frequently. Confirm that each role is still open and apply through the original employer link. JobTrack does not submit applications for you.</p>
+      </section>
+
       <section className="content-grid">
         <form id="application-form" className="surface application-form" onSubmit={saveApplication}>
           <div className="section-heading">
