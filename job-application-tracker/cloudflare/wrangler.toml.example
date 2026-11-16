@@ -1,0 +1,14 @@
+# Copy this file to wrangler.toml after creating the D1 database.
+# Replace the database_id with the ID returned by Cloudflare.
+# Never put JWT_SECRET in this file; use a Worker secret instead.
+
+name = "jobtracker-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-17"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jobtracker-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
