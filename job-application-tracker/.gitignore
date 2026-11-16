@@ -20,3 +20,7 @@
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Cloudflare development state and local secrets
+**/.dev.vars
+**/.wrangler/
